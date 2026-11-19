@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CodeNebula – Online Code Editor</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:dark;
+--bg:#0a0620;--text:#eef0ff;--muted:#a9a6d6;--panel:rgba(16,10,46,.58);--line:rgba(255,255,255,.13);--purple:#8b5cf6;--blue:#3b82f6;--cyan:#22d3ee}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;overflow:hidden}
+.bg{position:fixed;inset:0;z-index:0;overflow:hidden;background:linear-gradient(120deg,#1a0b4d,#0b1f6b,#06485e,#2a0f6e);background-size:400% 400%;animation:shift 18s ease infinite}
+.bg span{position:absolute;border-radius:50%;filter:blur(90px);opacity:.55;will-change:transform}
+.b1{width:48vmax;height:48vmax;background:var(--purple);top:-15%;left:-10%;animation:f1 16s ease-in-out infinite alternate}
+.b2{width:42vmax;height:42vmax;background:var(--blue);bottom:-20%;right:-8%;animation:f2 20s ease-in-out infinite alternate}
+.b3{width:34vmax;height:34vmax;background:var(--cyan);top:30%;left:38%;opacity:.35;animation:f3 14s ease-in-out infinite alternate}
+@keyframes shift{50%{background-position:100% 50%}}
+@keyframes f1{to{transform:translate(18vw,14vh) scale(1.2)}}
+@keyframes f2{to{transform:translate(-20vw,-12vh) scale(1.15)}}
+@keyframes f3{to{transform:translate(-16vw,18vh) scale(.8)}}
+@media (prefers-reduced-motion:reduce){.bg,.bg span{animation:none}}
+.app{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;gap:12px;padding:14px}
+header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
+.logo{font-weight:800;font-size:22px;letter-spacing:-.5px;display:flex;align-items:center;gap:8px}
+.logo b{background:linear-gradient(90deg,#c4b5fd,#7dd3fc,#67e8f9);-webkit-background-clip:text;background-clip:text;color:transparent}
+.logo i{font-style:normal;display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--purple),var(--cyan));box-shadow:0 0 22px rgba(139,92,246,.7)}
+.ctrl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+select,button{font:600 14px Inter,sans-serif;color:var(--text);background:rgba(255,255,255,.09);border:1px solid var(--line);border-radius:12px;padding:9px 14px;cursor:pointer;transition:.2s}
+select option{background:#150d3a}
+select:hover,button:hover{background:rgba(255,255,255,.16);transform:translateY(-1px)}
+button.primary{border:0;background:linear-gradient(135deg,var(--purple),var(--blue) 55%,var(--cyan));box-shadow:0 6px 26px rgba(59,130,246,.5);padding:9px 20px}
+button.primary:hover{box-shadow:0 8px 32px rgba(34,211,238,.6)}
+#hint{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:14px;background:linear-gradient(90deg,rgba(139,92,246,.28),rgba(34,211,238,.2));border:1px solid var(--line);font-size:14px}
+#hint button{padding:2px 9px;background:transparent;border:0;font-size:18px}
+main{flex:1;min-height:0;display:grid;grid-template-columns:220px 1.25fr 1fr;gap:12px}
+.side .bar{font-weight:700;letter-spacing:.08em;font-size:11px}
+.side .bar button{padding:3px 9px;font-size:14px;margin-left:4px}
+#list{flex:1;overflow:auto;padding:8px}
+.item{padding:9px 12px;border-radius:10px;font-size:14px;cursor:pointer;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item:hover{background:rgba(255,255,255,.08)}
+.item.on{background:linear-gradient(90deg,rgba(139,92,246,.4),rgba(34,211,238,.22));color:var(--text)}
+#drop{margin:8px;padding:14px;border:1.5px dashed rgba(255,255,255,.25);border-radius:12px;text-align:center;font-size:12px;color:var(--muted);transition:.2s}
+.side.drag #drop{border-color:var(--cyan);color:var(--cyan);background:rgba(34,211,238,.1)}
+.tabs{padding:6px 8px;gap:4px;justify-content:flex-start}
+#tabs{display:flex;gap:4px;overflow-x:auto;flex:1}
+.tab{display:flex;align-items:center;gap:8px;padding:6px 6px 6px 12px;border-radius:10px;font-size:13px;white-space:nowrap;cursor:pointer;color:var(--muted)}
+.tab.on{background:rgba(255,255,255,.12);color:var(--text);box-shadow:inset 0 -2px 0 var(--cyan)}
+.tab u{text-decoration:none;opacity:.6;padding:0 5px;border-radius:6px}
+.tab u:hover{opacity:1;background:rgba(255,255,255,.15)}
+#tog{display:none;padding:4px 10px}
+.panel{display:flex;flex-direction:column;min-height:0;background:var(--panel);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted)}
+.dots{display:flex;gap:6px}.dots u{width:11px;height:11px;border-radius:50%;background:#ff5f57}.dots u:nth-child(2){background:#febc2e}.dots u:nth-child(3){background:#28c840}
+.bar button{padding:3px 10px;font-size:12px}
+#ed{flex:1;min-height:0}
+.ace_editor{background:transparent!important}.ace_gutter{background:rgba(0,0,0,.18)!important}
+#prev{flex:1;min-height:0;width:100%;border:0;background:#fff;display:none}
+#log{flex:1;min-height:0;margin:0;padding:14px;overflow:auto;font:400 14px/1.6 'JetBrains Mono',ui-monospace,Menlo,monospace;white-space:pre-wrap;word-break:break-word}
+#log .log,#log .info{color:#e6e9ff}#log .warn{color:#fcd34d}#log .error{color:#fda4af}#log .sys{color:var(--muted)}#log .ok{color:#6ee7b7}
+.inbar{border-top:1px solid var(--line);border-bottom:0;font-size:11px;letter-spacing:.08em;font-weight:700}
+#stdin{flex:none;height:84px;resize:vertical;margin:0;padding:10px 14px;border:0;background:rgba(0,0,0,.22);color:var(--text);font:400 13px 'JetBrains Mono',ui-monospace,Menlo,monospace;outline:none}
+button:disabled{opacity:.6;cursor:wait}
+body.intro .app{visibility:hidden}
+#intro,#saved,#thanks{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;padding:calc(18px + env(safe-area-inset-top,0px)) 28px 24px;overflow:auto;transition:opacity .5s,transform .5s,visibility 0s}
+#intro.hide,#saved.hide,#thanks.hide{opacity:0;transform:scale(1.04);pointer-events:none;visibility:hidden;transition:opacity .5s,transform .5s,visibility 0s .5s}
+.nav{display:flex;align-items:center;justify-content:space-between;max-width:1150px;width:100%;margin:0 auto}
+.nav .primary{padding:10px 24px}
+.hero{flex:1;display:grid;grid-template-columns:1.1fr 1fr;gap:48px;align-items:center;max-width:1150px;width:100%;margin:0 auto}
+.hero h1{font-size:clamp(40px,6vw,70px);line-height:1.05;letter-spacing:-2px;margin:0 0 16px;font-weight:800}
+.hero h1 span{background:linear-gradient(90deg,#c4b5fd,#7dd3fc,#67e8f9);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{font-size:18px;color:#d5d3f5;margin:0 0 26px;max-width:480px;line-height:1.6}
+.cta button{padding:14px 28px;font-size:16px;border-radius:14px}
+.chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:28px}
+.chips span{padding:6px 13px;border-radius:999px;background:rgba(255,255,255,.09);border:1px solid var(--line);font-size:13px;color:#e0defa}
+.mock{background:var(--panel);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45),0 0 60px rgba(139,92,246,.25);animation:fl 6s ease-in-out infinite}
+.mock pre{margin:0;padding:18px;font:400 15px/1.7 'JetBrains Mono',ui-monospace,Menlo,monospace;color:#f8f8f2;overflow:auto}
+.mock i{font-style:normal}.k{color:#ff79c6}.f{color:#50fa7b}.s{color:#f1fa8c}.c{color:#8be9fd}
+@keyframes fl{50%{transform:translateY(-12px)}}
+#login{position:fixed;inset:0;z-index:30;display:none;place-items:center;background:rgba(5,3,20,.6);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+#login.show{display:grid}
+.card{width:min(380px,92vw);padding:28px;border-radius:20px;background:rgba(20,12,56,.88);border:1px solid var(--line);box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.card h2{margin:0 0 4px;font-size:24px}.card p{margin:0 0 16px;color:var(--muted);font-size:14px}
+.card input{width:100%;padding:12px 14px;margin-bottom:12px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.07);color:var(--text);font:400 15px Inter,sans-serif;outline:none}
+.card input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(34,211,238,.2)}
+.card .primary{width:100%;padding:12px;margin-top:4px}
+.card .link{background:none;border:0;width:100%;margin-top:8px;color:var(--muted);font-weight:400}
+#err{color:#fda4af;font-size:13px;min-height:18px;margin-bottom:6px}
+#user{display:none}
+footer{align-items:center}#msg{margin-left:auto}#next{padding:8px 22px;font-size:14px}
+.pill{padding:8px 16px;border-radius:999px;background:rgba(255,255,255,.1);border:1px solid var(--line);font-size:14px}
+.head3{max-width:1150px;width:100%;margin:28px auto 18px}
+.head3 h1,.ty h1{font-size:clamp(34px,5vw,56px);letter-spacing:-1.5px;margin:0 0 10px;font-weight:800;line-height:1.1}
+.head3 h1 span,.ty h1 span{background:linear-gradient(90deg,#c4b5fd,#7dd3fc,#67e8f9);-webkit-background-clip:text;background-clip:text;color:transparent}
+.head3 p{color:#d5d3f5;font-size:17px;margin:0;max-width:560px;line-height:1.5}
+#grid{flex:1;max-width:1150px;width:100%;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;align-content:start}
+.sc{background:var(--panel);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:10px;transition:.25s}
+.sc:hover{transform:translateY(-4px);box-shadow:0 18px 50px rgba(139,92,246,.35)}
+.sh{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.sh span{font-size:11px;padding:3px 10px;border-radius:999px;background:linear-gradient(90deg,var(--purple),var(--cyan));font-weight:700}
+.sc pre{margin:0;padding:12px;border-radius:12px;background:rgba(0,0,0,.28);font:400 12.5px/1.55 'JetBrains Mono',ui-monospace,Menlo,monospace;color:#e6e9ff;overflow:hidden;max-height:170px;white-space:pre-wrap}
+.sc small{color:var(--muted)}
+.sa{display:flex;gap:8px}.sa button{padding:7px 16px;font-size:13px}
+.empty{grid-column:1/-1;text-align:center;padding:60px 20px;border:1.5px dashed rgba(255,255,255,.25);border-radius:18px;color:var(--muted)}
+.foot3{max-width:1150px;width:100%;margin:24px auto 0;display:flex;justify-content:space-between}
+.foot3 button{padding:11px 26px}
+#thanks{align-items:center;text-align:center}
+.ty{margin:auto;max-width:720px}
+.big{font-size:70px;animation:fl 4s ease-in-out infinite}
+.ty p{color:#d5d3f5;font-size:18px;line-height:1.6;margin:0 0 24px}
+.again{padding-bottom:6px}.again p{color:var(--muted);margin:0 0 12px;font-size:16px}.again .primary{padding:12px 32px}
+.st{position:absolute;font-style:normal;font-size:26px;opacity:.7;animation:tw 5s ease-in-out infinite}
+@keyframes tw{50%{transform:translateY(-22px) rotate(15deg);opacity:1}}
+.s1{top:14%;left:10%}.s2{top:24%;right:12%;animation-delay:1s}.s3{bottom:26%;left:16%;animation-delay:2s}.s4{bottom:30%;right:18%;animation-delay:.5s}.s5{top:45%;left:5%;animation-delay:1.5s}.s6{top:10%;right:34%;animation-delay:2.5s}
+@media (max-width:800px){.hero{grid-template-columns:1fr;gap:28px;padding:16px 0}#intro{padding-left:18px;padding-right:18px}}
+footer{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--muted);padding:0 4px}
+@media (max-width:800px){main{grid-template-columns:1fr;grid-template-rows:1.3fr 1fr;position:relative}.side{display:none;position:absolute;z-index:5;inset:0 28% 0 0;background:rgba(14,9,40,.97)}.side.open{display:flex}#tog{display:block}.logo{font-size:19px}}
+</style>
+</head>
+<body class="intro">
+<div class="bg"><span class="b1"></span><span class="b2"></span><span class="b3"></span></div>
+<div id="intro">
+  <nav class="nav"><div class="logo"><i>⚡</i><b>CodeNebula</b></div><button id="nlogin" class="primary">Log in</button></nav>
+  <section class="hero">
+    <div>
+      <h1>Write. Run. <span>Create.</span></h1>
+      <p>CodeNebula is a beautiful online code editor where you can write and run code in 20+ languages, right from your browser.</p>
+      <div class="cta"><button id="start" class="primary">Start coding →</button></div>
+      <div class="chips"><span>⚡ 27 languages</span><span>📁 Files &amp; tabs</span><span>⬆ Upload code</span><span>▶ One-click run</span></div>
+    </div>
+    <div class="mock"><div class="bar"><div class="dots"><u></u><u></u><u></u></div><span>main.py</span><span></span></div><pre><i class="k">def</i> <i class="f">greet</i>(name):
+    <i class="k">return</i> <i class="s">f"Hello, {name}!"</i>
+
+<i class="f">print</i>(greet(<i class="s">"World"</i>))
+<i class="c"># ▶ Hello, World!</i></pre></div>
+  </section>
+</div>
+<div id="saved" class="hide">
+  <nav class="nav"><div class="logo"><i>⚡</i><b>CodeNebula</b></div><span class="pill">📂 <span id="cnt">0 snippets</span></span></nav>
+  <section class="head3"><h1>Your <span>saved codes</span></h1><p>Every idea you save lives here — safe, tidy and ready whenever inspiration strikes.</p></section>
+  <div id="grid"></div>
+  <div class="foot3"><button id="back3">← Back to editor</button><button id="next3" class="primary">Next →</button></div>
+</div>
+<div id="thanks" class="hide">
+  <i class="st s1">✨</i><i class="st s2">💫</i><i class="st s3">⭐</i><i class="st s4">✨</i><i class="st s5">💫</i><i class="st s6">⭐</i>
+  <nav class="nav"><div class="logo"><i>⚡</i><b>CodeNebula</b></div><button id="back4">← Saved codes</button></nav>
+  <section class="ty"><div class="big">💜</div><h1>Thank you for choosing <span>CodeNebula</span></h1><p>We hope you enjoyed writing, running and saving your code. Keep creating and keep learning — every great idea starts with a single line of code.</p></section>
+  <div class="again"><p>Visit again — your code will always be waiting for you ✨</p><button id="again" class="primary">Visit again</button></div>
+</div>
+<div id="login"><div class="card">
+  <h2>Welcome back 👋</h2><p>Log in to your CodeNebula workspace.</p>
+  <div id="err"></div>
+  <input id="em" type="email" placeholder="Email" autocomplete="email">
+  <input id="pw" type="password" placeholder="Password" autocomplete="current-password">
+  <button id="go" class="primary">Log in</button>
+  <button id="guest" class="link">Continue as guest</button>
+</div></div>
+<div class="app">
+  <header>
+    <div class="logo"><i>⚡</i><b>CodeNebula</b></div>
+    <div class="ctrl">
+      <select id="lang" aria-label="Language"></select>
+      <button id="seeSaved">📂 Saved</button><button id="save">💾 Save</button><button id="user" title="Log out"></button><button id="cfg" title="Change code-runner server">⚙</button><button id="reset">Reset</button>
+      <button id="copy">Copy</button>
+      <button id="run" class="primary">▶ Run</button>
+    </div>
+  </header>
+  <div id="hint"><span>👋 New here? Pick a language, write some code, and press <b>Run</b> (Ctrl/⌘ + Enter). Python, Java, C++ and 20+ more languages run too — type any program input in the Input box. Add files with ⬆ or drag and drop.</span><button id="x" aria-label="Dismiss">×</button></div>
+  <main>
+    <aside class="panel side" id="side"><div class="bar"><span>FILES</span><span><button id="nf" title="New file">＋</button><button id="up" title="Upload files">⬆</button></span></div><div id="list"></div><div id="drop">Drop files here to upload</div><input type="file" id="fi" multiple hidden></aside>
+    <section class="panel"><div class="bar tabs"><button id="tog" aria-label="Files">☰</button><div id="tabs"></div></div><div id="ed"></div></section>
+    <section class="panel"><div class="bar"><span>Output</span><button id="clr">Clear</button></div><iframe id="prev" sandbox="allow-scripts" title="Preview"></iframe><pre id="log"></pre><div class="bar inbar"><span>INPUT (STDIN)</span><span>one value per line</span></div><textarea id="stdin" placeholder="Type program input here, e.g. your name…"></textarea></section>
+  </main>
+  <footer><span id="pos">Ln 1, Col 1</span><span id="msg">Ready ✨</span><button id="next" class="primary">Next →</button></footer>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.9/ace.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.9/ext-language_tools.js"></script>
+<script>
+var L=[
+['javascript','JavaScript','javascript','js','// Welcome to CodeNebula ✨\nconst greet = n => "Hello, " + n + "!";\nconsole.log(greet("World"));\nconsole.log([1, 2, 3].map(x => x ** 2));'],
+['html','HTML / CSS / JS','html','html','<h1 style="font-family:sans-serif;color:#7c3aed">Hello, CodeNebula 👋</h1>\n<button onclick="this.textContent=\'Clicked!\'">Click me</button>'],
+['python','Python','python','py','print("Hello, World!")\nprint([x * x for x in range(5)])'],
+['typescript','TypeScript','typescript','ts','const greet = (name: string): string => `Hello, ${name}!`;\nconsole.log(greet("World"));'],
+['java','Java','java','java','public class Main {\n  public static void main(String[] args) {\n    System.out.println("Hello, World!");\n  }\n}'],
+['c','C','c_cpp','c','#include <stdio.h>\n\nint main() {\n  printf("Hello, World!\\n");\n  return 0;\n}'],
+['cpp','C++','c_cpp','cpp','#include <iostream>\n\nint main() {\n  std::cout << "Hello, World!" << std::endl;\n  return 0;\n}'],
+['csharp','C#','csharp','cs','using System;\n\nclass Program {\n  static void Main() {\n    Console.WriteLine("Hello, World!");\n  }\n}'],
+['go','Go','golang','go','package main\n\nimport "fmt"\n\nfunc main() {\n  fmt.Println("Hello, World!")\n}'],
+['rust','Rust','rust','rs','fn main() {\n    println!("Hello, World!");\n}'],
+['php','PHP','php','php','<?php\necho "Hello, World!";'],
+['ruby','Ruby','ruby','rb','puts "Hello, World!"\nputs [1, 2, 3].map { |x| x * x }.inspect'],
+['swift','Swift','swift','swift','print("Hello, World!")'],
+['kotlin','Kotlin','kotlin','kt','fun main() {\n    println("Hello, World!")\n}'],
+['dart','Dart','dart','dart','void main() {\n  print("Hello, World!");\n}'],
+['scala','Scala','scala','scala','object Main extends App {\n  println("Hello, World!")\n}'],
+['r','R','r','r','print("Hello, World!")\nprint((1:5)^2)'],
+['lua','Lua','lua','lua','print("Hello, World!")'],
+['perl','Perl','perl','pl','print "Hello, World!\\n";'],
+['haskell','Haskell','haskell','hs','main :: IO ()\nmain = putStrLn "Hello, World!"'],
+['elixir','Elixir','elixir','ex','IO.puts("Hello, World!")'],
+['julia','Julia','julia','jl','println("Hello, World!")'],
+['bash','Bash','sh','sh','#!/bin/bash\necho "Hello, World!"'],
+['sql','SQL','sql','sql','SELECT name, score\nFROM players\nWHERE score > 100\nORDER BY score DESC;'],
+['css','CSS','css','css','body {\n  background: linear-gradient(135deg, #8b5cf6, #22d3ee);\n}'],
+['json','JSON','json','json','{\n  "name": "CodeNebula",\n  "awesome": true\n}'],
+['yaml','YAML','yaml','yml','name: CodeNebula\nfeatures:\n  - editor\n  - themes'],
+['markdown','Markdown','markdown','md','# Hello, CodeNebula\n\nWrite **bold**, *italic* and `code`.']
+];
+L.push(['text','Plain Text','text','txt','']);
+var $=function(i){return document.getElementById(i)};
+var sel=$('lang'),log=$('log'),prev=$('prev'),files=[],act=null,n=1;
+L.forEach(function(l){var o=document.createElement('option');o.value=l[0];o.textContent=l[1];sel.appendChild(o)});
+ace.config.set('basePath','https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.9/');
+var ed=ace.edit('ed',{theme:'ace/theme/dracula',fontSize:15,fontFamily:"'JetBrains Mono',ui-monospace,Menlo,monospace",showPrintMargin:false,useWorker:false,tabSize:2,useSoftTabs:true,wrap:true,enableBasicAutocompletion:true,enableLiveAutocompletion:true,enableSnippets:true});
+function find(id){return L.filter(function(l){return l[0]===id})[0]}
+var EXT={htm:'html',jsx:'javascript',mjs:'javascript',tsx:'typescript',cc:'cpp',h:'c',kts:'kotlin',zsh:'bash'};
+var ICON={javascript:'🟨',html:'🟧',python:'🐍',css:'🎨',json:'🧾',java:'☕',typescript:'🔷',markdown:'📝',text:'📄'};
+var JID={typescript:94,python:92,java:91,c:50,cpp:54,csharp:51,go:60,rust:73,php:68,ruby:72,swift:83,kotlin:78,scala:81,r:80,lua:64,perl:85,haskell:61,elixir:57,bash:46,sql:82};
+var API='https://ce.judge0.com';
+function runRemote(code,id,l){
+  var b=$('run');b.disabled=true;b.textContent='⏳ Running…';
+  add('sys','▶ Running '+l[1]+' on the cloud runner…');
+  fetch(API+'/submissions?base64_encoded=false&wait=true',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source_code:code,language_id:JID[id],stdin:$('stdin').value})})
+  .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})
+  .then(function(d){
+    if(d.compile_output)add('error',d.compile_output);
+    if(d.stdout)add('log',d.stdout);
+    if(d.stderr)add('error',d.stderr);
+    if(d.message)add('error',d.message);
+    if(!d.stdout&&!d.stderr&&!d.compile_output&&!d.message)add('sys','(no output)');
+    add(d.status&&d.status.id===3?'ok':'warn','● '+(d.status?d.status.description:'Done')+(d.time?' · '+d.time+'s':''));
+    say(l[1]+' finished');
+  })
+  .catch(function(e){
+    add('error','Couldn’t reach the code-runner server ('+e.message+').');
+    add('sys','If you are on the published claude.ai page, outside servers are blocked — open the downloaded codenebula.html file in your browser instead. You can also use ⚙ to set another Judge0 server.');
+    say('Runner unreachable');
+  })
+  .then(function(){b.disabled=false;b.textContent='▶ Run'});
+}
+function langOf(name){var e=(name.split('.').pop()||'').toLowerCase();if(EXT[e])return EXT[e];var m=L.filter(function(l){return l[3]===e})[0];return m?m[0]:'text'}
+function render(){
+  var t=$('tabs'),li=$('list');t.innerHTML='';li.innerHTML='';
+  files.forEach(function(f){
+    var ic=ICON[f.lang]||'💻';
+    var tab=document.createElement('div');tab.className='tab'+(f===act?' on':'');
+    tab.innerHTML='<span></span><u>×</u>';tab.firstChild.textContent=ic+' '+f.name;
+    tab.firstChild.onclick=function(){openFile(f)};tab.lastChild.onclick=function(){closeFile(f)};
+    t.appendChild(tab);
+    var r=document.createElement('div');r.className='item'+(f===act?' on':'');r.textContent=ic+' '+f.name;
+    r.onclick=function(){openFile(f);$('side').classList.remove('open')};li.appendChild(r);
+  });
+}
+function openFile(f){act=f;var l=find(f.lang);ed.session.setMode('ace/mode/'+l[2]);ed.setValue(f.code,-1);sel.value=f.lang;render();say(f.name+' opened')}
+function addFile(name,lang,code){var f={name:name,lang:lang,code:code};files.push(f);openFile(f)}
+function closeFile(f){
+  if(files.length<2){say('Keep at least one file open');return}
+  var i=files.indexOf(f);files.splice(i,1);
+  if(act===f)openFile(files[Math.max(0,i-1)]);else render();
+}
+function readFiles(fl){[].forEach.call(fl,function(file){
+  if(file.size>1e6){say(file.name+' is too large (1 MB max)');return}
+  var r=new FileReader();
+  r.onload=function(){var s=String(r.result);if(s.indexOf('\u0000')>-1){say(file.name+' isn’t a text file');return}addFile(file.name,langOf(file.name),s);say('Uploaded '+file.name+' ✅')};
+  r.readAsText(file);
+})}
+function say(t){$('msg').textContent=t}
+function add(t,m){var s=document.createElement('div');s.className=t;s.textContent=m;log.appendChild(s);log.scrollTop=log.scrollHeight}
+function clr(){log.innerHTML=''}
+function showLog(){prev.style.display='none';log.style.display='block'}
+function run(){
+  var code=ed.getValue(),id=act.lang,l=find(id);
+  clr();prev.removeAttribute('srcdoc');
+  if(id==='html'){
+    log.style.display='none';prev.style.display='block';prev.srcdoc=code;say('Rendered preview');return;
+  }
+  showLog();
+  if(id!=='javascript'){
+    if(JID[id]){runRemote(code,id,l);return}
+    if(id==='json'){try{JSON.parse(code);add('ok','✓ Valid JSON')}catch(e){add('error','✗ '+e.message)}return}
+    add('sys',l[1]+' can’t be run here (the free runner doesn’t support it). Editing and highlighting still work.');
+    say(l[1]+': edit-only');return;
+  }
+  if(id==='javascript'){
+    add('sys','▶ Running JavaScript…');
+    var boot='<script>var s=function(t,a){parent.postMessage({k:"c",t:t,m:a.map(function(x){try{return typeof x==="string"?x:JSON.stringify(x)}catch(e){return String(x)}}).join(" ")},"*")};["log","info","warn","error"].forEach(function(t){console[t]=function(){s(t,[].slice.call(arguments))}});onerror=function(m,u,n){s("error",[m+" (line "+(n-1)+")"]);return true};addEventListener("unhandledrejection",function(e){s("error",["Unhandled promise rejection: "+e.reason])});<\/script>';
+    prev.srcdoc=boot+'<script>'+code.replace(/<\/script/gi,'<\\/script')+'<\/script>';
+    say('Executed JavaScript');return;
+  }
+  add('sys','▶ '+l[1]+' can’t be executed inside this sandboxed page. Editing, highlighting and autocomplete all work — JavaScript and HTML run live.');
+  add('sys','To run '+l[1]+' for real, this editor needs a code-runner backend (for example a Piston or Judge0 server).');
+  say(l[1]+': edit-only mode');
+}
+window.addEventListener('message',function(e){
+  if(e.source===prev.contentWindow&&e.data&&e.data.k==='c')add(e.data.t,e.data.m);
+});
+sel.onchange=function(){var f=act,l=find(sel.value);f.lang=l[0];f.name=f.name.replace(/\.[^.]*$/,'')+'.'+l[3];openFile(f)};
+$('run').onclick=run;$('clr').onclick=clr;
+$('reset').onclick=function(){ed.setValue(find(act.lang)[4],-1);say('Reset to starter code')};
+$('copy').onclick=function(){
+  var t=ed.getValue();
+  (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){say('Copied to clipboard ✅')}).catch(function(){ed.selectAll();ed.focus();say('Selected — press Ctrl/⌘ + C to copy')});
+};
+$('x').onclick=function(){$('hint').style.display='none'};
+ed.commands.addCommand({name:'run',bindKey:{win:'Ctrl-Enter',mac:'Command-Enter'},exec:run});
+ed.selection.on('changeCursor',function(){var p=ed.getCursorPosition();$('pos').textContent='Ln '+(p.row+1)+', Col '+(p.column+1)});
+ed.on('change',function(){if(act)act.code=ed.getValue()});
+$('nf').onclick=function(){var l=find(sel.value);addFile('untitled-'+(n++)+'.'+l[3],l[0],l[4])};
+$('up').onclick=function(){$('fi').click()};
+$('fi').onchange=function(){readFiles(this.files);this.value=''};
+$('tog').onclick=function(){$('side').classList.toggle('open')};
+$('cfg').onclick=function(){var u=prompt('Code-runner server (Judge0 URL):',API);if(u){API=u.replace(/\/+$/,'');say('Runner: '+API)}};
+document.addEventListener('dragover',function(e){e.preventDefault();$('side').classList.add('drag')});
+document.addEventListener('dragleave',function(){$('side').classList.remove('drag')});
+document.addEventListener('drop',function(e){e.preventDefault();$('side').classList.remove('drag');if(e.dataTransfer&&e.dataTransfer.files.length)readFiles(e.dataTransfer.files)});
+addFile('main.js','javascript',find('javascript')[4]);
+var intro=$('intro'),lg=$('login'),who=null;
+function openLogin(){lg.classList.add('show');$('err').textContent='';$('em').focus()}
+function enter(name){
+  who=name;intro.classList.add('hide');lg.classList.remove('show');document.body.classList.remove('intro');
+  var u=$('user');if(name){u.textContent='👤 '+name;u.style.display='inline-block'}else{u.style.display='none'}
+  ed.resize();say(name?'Welcome, '+name+' 👋':'Ready ✨');
+}
+$('nlogin').onclick=openLogin;
+$('start').onclick=function(){enter(who)};
+$('guest').onclick=function(){enter(null)};
+$('go').onclick=function(){
+  var e=$('em').value.trim(),p=$('pw').value;
+  if(!/^\S+@\S+\.\S+$/.test(e)){$('err').textContent='Please enter a valid email.';return}
+  if(p.length<4){$('err').textContent='Password must be at least 4 characters.';return}
+  var nm=e.split('@')[0];enter(nm.charAt(0).toUpperCase()+nm.slice(1));
+};
+lg.onclick=function(e){if(e.target===lg)lg.classList.remove('show')};
+['em','pw'].forEach(function(i){$(i).addEventListener('keydown',function(e){if(e.key==='Enter')$('go').click()})});
+var KEY='cn_saved',mem=[];
+function getSaved(){try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){return mem}}
+function putSaved(a){mem=a;try{localStorage.setItem(KEY,JSON.stringify(a))}catch(e){}}
+function go(v){
+  intro.classList.toggle('hide',v!=='intro');
+  $('saved').classList.toggle('hide',v!=='saved');
+  $('thanks').classList.toggle('hide',v!=='thanks');
+  document.body.classList.toggle('intro',v!=='app');
+  if(v==='saved')renderSaved();
+  if(v==='app')ed.resize();
+}
+function saveCode(){
+  var code=ed.getValue();
+  if(!code.trim()){say('Nothing to save yet — write some code first');return}
+  var a=getSaved(),i=-1;
+  a.forEach(function(s,k){if(s.name===act.name)i=k});
+  var s={name:act.name,lang:act.lang,label:find(act.lang)[1],code:code,t:Date.now()};
+  if(i>-1)a[i]=s;else a.unshift(s);
+  putSaved(a);say('Saved '+act.name+' ✅ — see it on the Saved page');
+}
+function openSaved(s){
+  var f=files.filter(function(x){return x.name===s.name})[0];
+  if(f){f.code=s.code;f.lang=s.lang;openFile(f)}else addFile(s.name,s.lang,s.code);
+  go('app');
+}
+function renderSaved(){
+  var g=$('grid'),a=getSaved();g.innerHTML='';
+  $('cnt').textContent=a.length+(a.length===1?' snippet':' snippets');
+  if(!a.length){var e=document.createElement('div');e.className='empty';e.textContent='No saved code yet — write something in the editor and press 💾 Save.';g.appendChild(e);return}
+  a.forEach(function(s,k){
+    var c=document.createElement('div');c.className='sc';
+    var h=document.createElement('div');h.className='sh';
+    var nm=document.createElement('b');nm.textContent=(ICON[s.lang]||'💻')+' '+s.name;
+    var bd=document.createElement('span');bd.textContent=s.label;
+    h.appendChild(nm);h.appendChild(bd);
+    var p=document.createElement('pre');p.textContent=s.code.split('\n').slice(0,9).join('\n');
+    var d=document.createElement('small');d.textContent=new Date(s.t).toLocaleString();
+    var ac=document.createElement('div');ac.className='sa';
+    var o=document.createElement('button');o.className='primary';o.textContent='Open';o.onclick=function(){openSaved(s)};
+    var x=document.createElement('button');x.textContent='Delete';x.onclick=function(){var b=getSaved();b.splice(k,1);putSaved(b);renderSaved()};
+    ac.appendChild(o);ac.appendChild(x);
+    c.appendChild(h);c.appendChild(p);c.appendChild(d);c.appendChild(ac);g.appendChild(c);
+  });
+}
+$('save').onclick=saveCode;
+ed.commands.addCommand({name:'save',bindKey:{win:'Ctrl-S',mac:'Command-S'},exec:saveCode});
+$('seeSaved').onclick=function(){go('saved')};
+$('next').onclick=function(){go('saved')};
+$('back3').onclick=function(){go('app')};
+$('next3').onclick=function(){go('thanks')};
+$('back4').onclick=function(){go('saved')};
+$('again').onclick=function(){go('intro')};
+$('user').onclick=function(){who=null;$('user').style.display='none';$('em').value='';$('pw').value='';document.body.classList.add('intro');intro.classList.remove('hide')};
+</script>
+</body>
+</html>
